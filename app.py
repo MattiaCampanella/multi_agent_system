@@ -24,7 +24,7 @@ sim_speed = st.sidebar.slider("Velocità Simulazione", 0.01, 1.0, 0.1)
 
 # Map visualization
 st.subheader(f"Mappa - Istanza {file} ({data['metadata']['grid_size']}x{data['metadata']['grid_size']})")
-fig = visualize(data, f"output_{file}.png")
+fig = visualize(data)
 st.pyplot(fig)
 
 # TODO: agent interaction logic
