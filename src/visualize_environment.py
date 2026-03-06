@@ -1,18 +1,8 @@
 """
-Visualizza un ambiente da un file JSON e salva come immagine PNG.
-
-Uso:
-    python visualize_environment.py input.json output.png
-    python visualize_environment.py input.json              # salva come input.png
+Visualizza un ambiente usando pygame.
 """
 
-import argparse
-import json
-import os
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from matplotlib.patches import Rectangle
-
+import pygame
 
 # Costanti cella
 EMPTY = 0
@@ -21,129 +11,116 @@ WAREHOUSE = 2
 ENTRANCE = 3
 EXIT = 4
 
+# Colori (R, G, B)
+COLOR_MAP = {
+    EMPTY:     (255, 255, 255),
+    WALL:      ( 64,  64,  64),
+    WAREHOUSE: ( 74, 144, 217),
+    ENTRANCE:  ( 46, 204, 113),
+    EXIT:      (231,  76,  60),
+}
+COLOR_OBJECT = (255, 165,   0)
+COLOR_GRID   = (200, 200, 200)
+COLOR_BG     = (240, 240, 240)
 
-def visualize(data: dict) -> plt.Figure:
-    """Legge il JSON dell'ambiente e salva la visualizzazione come PNG."""
+AGENT_COLORS = [
+    (228,  26,  28),
+    ( 55, 126, 184),
+    ( 77, 175,  74),
+    (152,  78, 163),
+    (255, 127,   0),
+]
 
-    grid = data["grid"]
+LEGEND_ITEMS = [
+    (COLOR_MAP[WALL],      "Wall"),
+    (COLOR_MAP[WAREHOUSE], "Warehouse"),
+    (COLOR_MAP[ENTRANCE],  "Entrance"),
+    (COLOR_MAP[EXIT],      "Exit"),
+    (COLOR_MAP[EMPTY],     "Corridor"),
+    (COLOR_OBJECT,         "Object"),
+]
+
+LEGEND_WIDTH = 180
+CELL_SIZE    = 28
+
+
+def visualize(data: dict, agents: list = None, surface: pygame.Surface = None) -> pygame.Surface:
+    """
+    Disegna l'ambiente (e opzionalmente gli agenti) su una pygame.Surface.
+    Se surface è None ne crea una nuova e la restituisce.
+    """
+    grid       = data["grid"]
     warehouses = data["warehouses"]
-    objects = data.get("objects", [])
-    n = data["metadata"]["grid_size"]
+    objects    = data.get("objects", [])
+    n          = data["metadata"]["grid_size"]
 
-    fig, ax = plt.subplots(figsize=(10, 10))
+    grid_px  = n * CELL_SIZE
+    win_w    = grid_px + LEGEND_WIDTH
+    win_h    = grid_px
 
-    color_map = {
-        EMPTY: "white",
-        WALL: "#404040",
-        WAREHOUSE: "#4a90d9",
-        ENTRANCE: "#2ecc71",
-        EXIT: "#e74c3c",
-    }
+    if surface is None:
+        surface = pygame.Surface((win_w, win_h))
 
-    # Mappa frecce direzionali per entrate/uscite di ogni magazzino
+    surface.fill(COLOR_BG)
+
+    # --- frecce direzione entrate/uscite ---
     arrow_map = {}
     for w in warehouses:
         side = w["side"]
         er, ec = w["entrance"]
         xr, xc = w["exit"]
         if side == "top":
-            arrow_map[(er, ec)] = "\u25B2"
-            arrow_map[(xr, xc)] = "\u25BC"
+            arrow_map[(er, ec)] = "\u25B2"; arrow_map[(xr, xc)] = "\u25BC"
         elif side == "bottom":
-            arrow_map[(er, ec)] = "\u25BC"
-            arrow_map[(xr, xc)] = "\u25B2"
+            arrow_map[(er, ec)] = "\u25BC"; arrow_map[(xr, xc)] = "\u25B2"
         elif side == "left":
-            arrow_map[(er, ec)] = "\u25C0"
-            arrow_map[(xr, xc)] = "\u25B6"
+            arrow_map[(er, ec)] = "\u25C0"; arrow_map[(xr, xc)] = "\u25B6"
         else:
-            arrow_map[(er, ec)] = "\u25B6"
-            arrow_map[(xr, xc)] = "\u25C0"
+            arrow_map[(er, ec)] = "\u25B6"; arrow_map[(xr, xc)] = "\u25C0"
 
-    # Disegna cella per cella
+    font_arrow  = pygame.font.SysFont("segoeuisymbol", CELL_SIZE - 6, bold=True)
+    font_agent  = pygame.font.SysFont("arial", CELL_SIZE - 10, bold=True)
+    font_legend = pygame.font.SysFont("arial", 13)
+
+    # --- celle ---
     for r in range(n):
         for c in range(n):
-            val = grid[r][c]
-            color = color_map.get(val, "white")
-            rect = Rectangle(
-                (c - 0.5, r - 0.5), 1, 1,
-                facecolor=color,
-                edgecolor="lightgrey",
-                linewidth=0.5,
-            )
-            ax.add_patch(rect)
+            val   = grid[r][c]
+            color = COLOR_MAP.get(val, COLOR_MAP[EMPTY])
+            rect  = pygame.Rect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+            pygame.draw.rect(surface, color, rect)
+            pygame.draw.rect(surface, COLOR_GRID, rect, 1)
 
             if (r, c) in arrow_map:
-                ax.text(
-                    c, r, arrow_map[(r, c)], fontsize=8, color="white",
-                    ha="center", va="center", fontweight="bold",
-                )
+                txt = font_arrow.render(arrow_map[(r, c)], True, (255, 255, 255))
+                surface.blit(txt, txt.get_rect(center=rect.center))
 
-    # Oggetti - cerchi arancioni
+    # --- oggetti ---
     for obj in objects:
         obj_r, obj_c = obj
-        circle = plt.Circle(
-            (obj_c, obj_r), 0.3,
-            color="orange", zorder=5,
-        )
-        ax.add_patch(circle)
+        cx = obj_c * CELL_SIZE + CELL_SIZE // 2
+        cy = obj_r * CELL_SIZE + CELL_SIZE // 2
+        pygame.draw.circle(surface, COLOR_OBJECT, (cx, cy), CELL_SIZE // 3)
 
-    # Legenda
-    legend_elements = [
-        mpatches.Patch(facecolor="#404040", edgecolor="black",
-                       label="Muro / Scaffale"),
-        mpatches.Patch(facecolor="#4a90d9", edgecolor="black",
-                       label="Magazzino"),
-        mpatches.Patch(facecolor="#2ecc71", edgecolor="black",
-                       label="Entrata"),
-        mpatches.Patch(facecolor="#e74c3c", edgecolor="black",
-                       label="Uscita"),
-        mpatches.Patch(facecolor="white", edgecolor="black",
-                       label="Corridoio"),
-        mpatches.Patch(facecolor="orange", edgecolor="black",
-                       label="Oggetto"),
-    ]
+    # --- agenti ---
+    for i, agent in enumerate(agents or []):
+        ar, ac = agent.position
+        color  = AGENT_COLORS[i % len(AGENT_COLORS)]
+        cx = ac * CELL_SIZE + CELL_SIZE // 2
+        cy = ar * CELL_SIZE + CELL_SIZE // 2
+        pygame.draw.circle(surface, color, (cx, cy), CELL_SIZE // 2 - 2)
+        lbl = font_agent.render(str(agent.id), True, (255, 255, 255))
+        surface.blit(lbl, lbl.get_rect(center=(cx, cy)))
 
-    # Legend (change: moved to the right of the plot)
-    ax.legend(
-        handles=legend_elements,
-        loc="upper left",
-        bbox_to_anchor=(1.01, 1),
-        borderaxespad=0,
-        fontsize=8,
-        framealpha=0.9,
-    )
+    # --- legenda ---
+    lx = grid_px + 8
+    ly = 10
+    for color, label in LEGEND_ITEMS:
+        pygame.draw.rect(surface, color, (lx, ly, 16, 16))
+        pygame.draw.rect(surface, (0, 0, 0), (lx, ly, 16, 16), 1)
+        txt = font_legend.render(label, True, (30, 30, 30))
+        surface.blit(txt, (lx + 22, ly))
+        ly += 24
 
-    ax.set_xlim(-0.5, n - 0.5)
-    ax.set_ylim(-0.5, n - 0.5)
-    ax.set_xticks(range(n))
-    ax.set_yticks(range(n))
-    ax.set_aspect("equal")
-    ax.invert_yaxis()
-    ax.set_xlabel("Colonna")
-    ax.set_ylabel("Riga")
+    return surface
 
-    plt.tight_layout()
-    plt.close(fig)
-
-    #(change: return fig for Streamlit visualization, instead of saving to file)
-    return fig
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Visualizza un ambiente MAPD da un file JSON e salva come PNG."
-    )
-    parser.add_argument(
-        "input_json",
-        help="percorso del file JSON con lo stato dell'ambiente",
-    )
-    parser.add_argument(
-        "output_png",
-        nargs="?",
-        default=None,
-        help="percorso del file PNG di output (default: <input>.png)",
-    )
-
-    args = parser.parse_args()
-    output = args.output_png or os.path.splitext(args.input_json)[0] + ".png"
-
-    visualize(args.input_json, output)

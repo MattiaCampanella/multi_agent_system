@@ -1,30 +1,84 @@
-import streamlit as st
 import json
-import numpy as np
-from src.visualize_environment import visualize
+import sys
+import pygame
+from src.visualize_environment import visualize, CELL_SIZE, LEGEND_WIDTH
+from src.agents.base_agent import BaseAgent
 
-st.title("Multi-Agent Recovery, Organization, Network Navigation Engine")
-# Layout selection
-file = st.sidebar.selectbox("Seleziona Layout Mappa", ["A", "B"])
-config_file = f"layouts\\{file}.json"
+# ---- Configurazione ----
+LAYOUT = "A"          # "A", "B"
+VIS_RANGE   = 2
+COMM_RANGE  = 1
+INIT_BATTERY = 500
+NUM_AGENTS  = 5
+SIM_SPEED   = 10      # ticks per second
 
+config_file = f"layouts\\{LAYOUT}.json"
 with open(config_file, "r") as f:
     data = json.load(f)
 
-# Sidebar parameters
-st.sidebar.header("Parametri Agenti")
-vis_range = st.sidebar.slider("Raggio Visibilità", 1, 3, 2)
-comm_range = st.sidebar.slider("Raggio Comunicazione", 1, 2, 1)
-init_battery = st.sidebar.slider("Batteria Iniziale", 10, 500, 100)
+grid = data["grid"]
+n    = data["metadata"]["grid_size"]
 
-# Simulation parameters
-st.sidebar.header("Parametri Simulazione")
-max_ticks = st.sidebar.radio("Durata Simulazione (ticks)", (500, 750), index=0)
-sim_speed = st.sidebar.slider("Velocità Simulazione", 0.01, 1.0, 0.1)
+# ---- Spawn agenti sulle prime NUM_AGENTS celle libere ----
+spawn_positions = []
+for r in range(n):
+    for c in range(n):
+        if grid[r][c] == 0:
+            spawn_positions.append((r, c))
+        if len(spawn_positions) == NUM_AGENTS:
+            break
+    if len(spawn_positions) == NUM_AGENTS:
+        break
 
-# Map visualization
-st.subheader(f"Mappa - Istanza {file} ({data['metadata']['grid_size']}x{data['metadata']['grid_size']})")
-fig = visualize(data)
-st.pyplot(fig)
+agents = [
+    BaseAgent(
+        id=i,
+        vis_range=VIS_RANGE,
+        comm_range=COMM_RANGE,
+        init_battery=INIT_BATTERY,
+        position=spawn_positions[i],
+    )
+    for i in range(NUM_AGENTS)
+]
 
-# TODO: agent interaction logic
+# scout iniziale
+for agent in agents:
+    agent.scout(grid)
+
+
+# ---- Pygame ----
+pygame.init()
+grid_px = n * CELL_SIZE
+screen  = pygame.display.set_mode((grid_px + LEGEND_WIDTH, grid_px))
+pygame.display.set_caption(f"MARNE — Layout {LAYOUT}")
+clock   = pygame.time.Clock()
+
+# Movimento agente 0 con frecce / WASD
+KEY_DIR = {
+    pygame.K_UP:    "up",    pygame.K_w: "up",
+    pygame.K_DOWN:  "down",  pygame.K_s: "down",
+    pygame.K_LEFT:  "left",  pygame.K_a: "left",
+    pygame.K_RIGHT: "right", pygame.K_d: "right",
+}
+
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                running = False
+
+            
+            direction = KEY_DIR.get(event.key)
+            if direction:
+                agents[0].move(direction)
+                agents[0].scout(grid)
+
+    visualize(data, agents=agents, surface=screen)
+    pygame.display.flip()
+    clock.tick(SIM_SPEED)
+
+pygame.quit()
+sys.exit()
