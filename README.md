@@ -1,2 +1,2 @@
 
-# Multi-Agent Recovery, Organization, Network Navigation Engine
+# Multi-Agent Recovery, Organization and Network Navigation Engine
