@@ -44,7 +44,7 @@ class ScoutAgent(BaseAgent):
                         if self.known_agents:
                             min_agent_dist = min(
                                 abs(r - ar) + abs(c - ac)
-                                for ar, ac in self.known_agents.values()
+                                for (ar, ac), _ in self.known_agents.values()
                             )
                         else:
                             min_agent_dist = 0
@@ -73,14 +73,14 @@ class ScoutAgent(BaseAgent):
         best_score, best_dir = frontier_candidates[0]
         return best_dir
 
-    def step(self, grid: list, objects: list = None, other_agents: dict = None) -> None:
+    def step(self, grid: list, objects: list = None, other_agents: dict = None, current_tick: int = 0) -> None:
         """
         Un tick di esplorazione frontier-based:
         1. scout() — aggiorna local_map e known_objects.
         2. BFS verso la frontiera più vicina.
         3. Muove di un passo in quella direzione.
         """
-        self.scout(grid, objects, other_agents)
+        self.scout(grid, objects, other_agents, current_tick=current_tick)
         direction = self._bfs_to_nearest_frontier()
         if direction is not None:
             self.move(direction)

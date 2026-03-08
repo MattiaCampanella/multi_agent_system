@@ -29,12 +29,12 @@ class CollectorAgent(BaseAgent):
     # ------------------------------------------------------------------
     # Scout (override)
     # ------------------------------------------------------------------
-    def scout(self, grid: list, objects: list = None, agents: list = None) -> None:
+    def scout(self, grid: list, objects: list = None, agents: list = None, current_tick: int = 0) -> None:
         """
         Estende BaseAgent.scout(): dopo aver aggiornato local_map e known_objects,
         individua le celle ENTRANCE (3) visibili e le aggiunge a self.warehouses.
         """
-        super().scout(grid, objects, agents)
+        super().scout(grid, objects, agents, current_tick=current_tick)
 
         for (r, c), cell_val in self.local_map.items():
             if cell_val == ENTRANCE and (r, c) not in self._known_entrances:
@@ -149,14 +149,14 @@ class CollectorAgent(BaseAgent):
     # ------------------------------------------------------------------
     # Step
     # ------------------------------------------------------------------
-    def step(self, grid: list, objects: list = None, agents: list = None) -> None:
+    def step(self, grid: list, objects: list = None, agents: list = None, current_tick: int = 0) -> None:
         """
         Un tick del collector:
         - EXPLORING: esplora le frontiere con BFS; se scopre un oggetto (e c'è
           almeno un warehouse noto) passa a TARGETING.
         - TARGETING: naviga verso l'oggetto bersaglio con BFS.
         """
-        self.scout(grid, objects, agents)
+        self.scout(grid, objects, agents, current_tick=current_tick)
 
         if self.state == EXPLORING:
             if self.known_objects and self.warehouses and not self.carrying:

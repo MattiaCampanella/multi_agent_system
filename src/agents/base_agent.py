@@ -54,13 +54,14 @@ class BaseAgent:
                 err += dr
                 c += sc
 
-    def scout(self, grid: list, objects: list = None, agents: list = None) -> None:
+    def scout(self, grid: list, objects: list = None, agents: list = None, current_tick: int = 0) -> None:
         """
         Updates local_map with cells visible from current position.
         If objects is provided, memorizes any object position that falls
         within visual range and has line of sight.
         grid is a 2D list (grid[r][c]).
         objects is a list of (row, col) tuples of object positions.
+        current_tick is the global simulation tick used to timestamp agent positions.
         """
         rows = len(grid)
         cols = len(grid[0]) if rows else 0
@@ -82,7 +83,7 @@ class BaseAgent:
                     if self._has_line_of_sight((obj_r, obj_c), grid):
                         self.known_objects.add((obj_r, obj_c))
 
-        # Aggiunge agenti visibili a known_agents
+        # Aggiunge agenti visibili a known_agents (posizione + tick di osservazione)
         if agents:
             for other in agents:
                 if other is self:
@@ -90,7 +91,9 @@ class BaseAgent:
                 ar, ac = other.position
                 if abs(ar - r) <= self.vis_range and abs(ac - c) <= self.vis_range:
                     if self._has_line_of_sight((ar, ac), grid):
-                        self.known_agents[other.id] = other.position
+                        existing = self.known_agents.get(other.id)
+                        if existing is None or current_tick >= existing[1]:
+                            self.known_agents[other.id] = (other.position, current_tick)
 
     def move(self, direction: str) -> None:
         """
@@ -143,8 +146,18 @@ class BaseAgent:
         self.known_objects.update(merged_objects) # aggiorna senza puntare allo stesso set
         other.known_objects.clear()
         other.known_objects.update(merged_objects)
-        # Unione bidirezionale degli agenti noti
-        merged_agents = {**other.known_agents, **self.known_agents}  # self ha priorità
+        # Unione bidirezionale degli agenti noti: vince l'informazione più recente
+        merged_agents = {}
+        for agent_id in set(self.known_agents) | set(other.known_agents):
+            self_entry = self.known_agents.get(agent_id)
+            other_entry = other.known_agents.get(agent_id)
+            if self_entry is None:
+                merged_agents[agent_id] = other_entry
+            elif other_entry is None:
+                merged_agents[agent_id] = self_entry
+            else:
+                # tiene l'entry con il tick più recente
+                merged_agents[agent_id] = self_entry if self_entry[1] >= other_entry[1] else other_entry
         other.known_agents.update(merged_agents)
         self.known_agents.update(merged_agents)
 

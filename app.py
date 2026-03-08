@@ -7,7 +7,7 @@ from src.agents.collector_agent import CollectorAgent
 from src.agents.base_agent import communicate_all
 
 # ---- Configurazione ----
-LAYOUT = "A"          # "A", "B"
+LAYOUT = "B"          # "A", "B"
 VIS_RANGE   = 3
 COMM_RANGE  = 2
 INIT_BATTERY = 500
@@ -76,10 +76,10 @@ while running and ticks < MAX_TICKS and (objects or any(a.carrying for a in coll
 
     # --- Simulation step ---
     for agent in scouts:
-        agent.step(grid, objects, agents)
+        agent.step(grid, objects, agents, current_tick=ticks)
         ticks += 1
     for agent in collectors:
-        agent.step(grid, objects, agents)
+        agent.step(grid, objects, agents, current_tick=ticks)
         ticks += 1
     communicate_all(agents)
     steps += 1
@@ -100,7 +100,8 @@ total_delivered = sum(
 avg_energy_consumed = sum(INIT_BATTERY - a.battery for a in agents) / len(agents)
 
 print("\n========= SIMULATION SUMMARY =========")
-print(f"Steps simulated:         {steps} / {MAX_TICKS // len(agents)}")
+print(f"Ticks:                    {ticks} / {MAX_TICKS}")
+print(f"Steps per agent:         {steps} / {MAX_TICKS // len(agents)}")
 print(f"Objects delivered:        {total_delivered} / {initial_object_count}")
 print(f"Avg. energy consumed:  {avg_energy_consumed:.1f} / {INIT_BATTERY}")
 print("======================================")
