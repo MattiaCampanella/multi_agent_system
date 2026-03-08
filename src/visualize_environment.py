@@ -3,6 +3,7 @@ Visualizza un ambiente usando pygame.
 """
 
 import pygame
+from src.agents.collector_agent import CollectorAgent as _CollectorAgent
 
 # Costanti cella
 EMPTY = 0
@@ -23,21 +24,18 @@ COLOR_OBJECT = (255, 165,   0)
 COLOR_GRID   = (200, 200, 200)
 COLOR_BG     = (240, 240, 240)
 
-AGENT_COLORS = [
-    (228,  26,  28),
-    ( 55, 126, 184),
-    ( 77, 175,  74),
-    (152,  78, 163),
-    (255, 127,   0),
-]
+AGENT_COLOR_SCOUT     = ( 52, 152, 219)   # blu
+AGENT_COLOR_COLLECTOR = (231,  76,  60)   # rosso
 
 LEGEND_ITEMS = [
     (COLOR_MAP[WALL],      "Wall"),
     (COLOR_MAP[WAREHOUSE], "Warehouse"),
     (COLOR_MAP[ENTRANCE],  "Entrance"),
     (COLOR_MAP[EXIT],      "Exit"),
-    (COLOR_MAP[EMPTY],     "Corridor"),
-    (COLOR_OBJECT,         "Object"),
+    (COLOR_MAP[EMPTY],        "Corridor"),
+    (COLOR_OBJECT,            "Object"),
+    (AGENT_COLOR_SCOUT,       "Scout"),
+    (AGENT_COLOR_COLLECTOR,   "Collector"),
 ]
 
 LEGEND_WIDTH = 180
@@ -103,9 +101,9 @@ def visualize(data: dict, agents: list = None, surface: pygame.Surface = None) -
         pygame.draw.circle(surface, COLOR_OBJECT, (cx, cy), CELL_SIZE // 3)
 
     # --- agenti ---
-    for i, agent in enumerate(agents or []):
+    for agent in (agents or []):
         ar, ac = agent.position
-        color  = AGENT_COLORS[i % len(AGENT_COLORS)]
+        color  = AGENT_COLOR_COLLECTOR if isinstance(agent, _CollectorAgent) else AGENT_COLOR_SCOUT
         cx = ac * CELL_SIZE + CELL_SIZE // 2
         cy = ar * CELL_SIZE + CELL_SIZE // 2
         pygame.draw.circle(surface, color, (cx, cy), CELL_SIZE // 2 - 2)

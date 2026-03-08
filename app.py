@@ -8,12 +8,13 @@ from src.agents.base_agent import communicate_all
 
 # ---- Configurazione ----
 LAYOUT = "A"          # "A", "B"
-VIS_RANGE   = 2
-COMM_RANGE  = 1
+VIS_RANGE   = 3
+COMM_RANGE  = 2
 INIT_BATTERY = 500
 NUM_SCOUTS  = 3
 NUM_COLLECTORS = 2
-SIM_SPEED   = 10      # ticks per second
+SIM_SPEED   = 5      # ticks per second
+MAX_TICKS = 750
 
 config_file = f"layouts\\{LAYOUT}.json"
 with open(config_file, "r") as f:
@@ -61,7 +62,8 @@ clock   = pygame.time.Clock()
 
 # --- Main loop ---
 running = True
-while running:
+ticks = 0
+while running and ticks < MAX_TICKS:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -72,8 +74,10 @@ while running:
     # --- Simulation step ---
     for agent in scouts:
         agent.step(grid, objects)
+        ticks += 1
     for agent in collectors:
         agent.step(grid, objects)
+        ticks += 1
     communicate_all(agents)
 
     # --- Visualization ---
