@@ -100,10 +100,10 @@ total_delivered = sum(
 avg_energy_consumed = sum(INIT_BATTERY - a.battery for a in agents) / len(agents)
 
 print("\n========= SIMULATION SUMMARY =========")
-print(f"Ticks:                    {ticks} / {MAX_TICKS}")
+print(f"Ticks:                   {ticks} / {MAX_TICKS}")
 print(f"Steps per agent:         {steps} / {MAX_TICKS // len(agents)}")
 print(f"Objects delivered:        {total_delivered} / {initial_object_count}")
-print(f"Avg. energy consumed:  {avg_energy_consumed:.1f} / {INIT_BATTERY}")
+print(f"Avg. energy consumed:   {avg_energy_consumed:.1f} / {INIT_BATTERY}")
 print("======================================")
 
 sys.exit()
