@@ -10,6 +10,8 @@ class BaseAgent:
         self.battery = init_battery
         self.local_map = {}
         self.known_objects = set()  # posizioni oggetti rilevati e non ancora raccolti
+        self.collected_objects = set()  # posizioni oggetti raccolti (da scartare durante lo scambio di informazioni)
+        self.known_agents = {}     # id -> (posizione)
         self.load = None
         self.position = (0, 0)  # (row, col)
         self.grid_size = grid_size  # (rows, cols) — usato per bloccare uscita dalla mappa
@@ -52,7 +54,7 @@ class BaseAgent:
                 err += dr
                 c += sc
 
-    def scout(self, grid: list, objects: list = None) -> None:
+    def scout(self, grid: list, objects: list = None, agents: list = None) -> None:
         """
         Updates local_map with cells visible from current position.
         If objects is provided, memorizes any object position that falls
@@ -79,6 +81,16 @@ class BaseAgent:
                 if abs(obj_r - r) <= self.vis_range and abs(obj_c - c) <= self.vis_range:
                     if self._has_line_of_sight((obj_r, obj_c), grid):
                         self.known_objects.add((obj_r, obj_c))
+
+        # Aggiunge agenti visibili a known_agents
+        if agents:
+            for other in agents:
+                if other is self:
+                    continue
+                ar, ac = other.position
+                if abs(ar - r) <= self.vis_range and abs(ac - c) <= self.vis_range:
+                    if self._has_line_of_sight((ar, ac), grid):
+                        self.known_agents[other.id] = other.position
 
     def move(self, direction: str) -> None:
         """
@@ -126,9 +138,15 @@ class BaseAgent:
         other.local_map.update(merged_map)
         self.local_map.update(merged_map)
         # Unione bidirezionale degli oggetti noti
-        merged_objects = self.known_objects | other.known_objects
-        self.known_objects = merged_objects
-        other.known_objects = merged_objects
+        merged_objects = (self.known_objects | other.known_objects) - self.collected_objects - other.collected_objects
+        self.known_objects.clear() # ripulisce la lista
+        self.known_objects.update(merged_objects) # aggiorna senza puntare allo stesso set
+        other.known_objects.clear()
+        other.known_objects.update(merged_objects)
+        # Unione bidirezionale degli agenti noti
+        merged_agents = {**other.known_agents, **self.known_agents}  # self ha priorità
+        other.known_agents.update(merged_agents)
+        self.known_agents.update(merged_agents)
 
 
 def communicate_all(agents: list) -> None:

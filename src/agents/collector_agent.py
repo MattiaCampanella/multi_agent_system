@@ -1,5 +1,5 @@
 from collections import deque
-from src.agents.scout_agent import ScoutAgent
+from src.agents.base_agent import BaseAgent
 
 # Costanti cella
 EMPTY = 0
@@ -15,7 +15,7 @@ DELIVERING = "delivering"
 EXITING    = "exiting"
 
 
-class CollectorAgent(ScoutAgent):
+class CollectorAgent(BaseAgent):
     def __init__(self, id, vis_range, comm_range, init_battery, grid_size=None):
         super().__init__(id=id, vis_range=vis_range, comm_range=comm_range,
                          init_battery=init_battery, grid_size=grid_size)
@@ -29,12 +29,12 @@ class CollectorAgent(ScoutAgent):
     # ------------------------------------------------------------------
     # Scout (override)
     # ------------------------------------------------------------------
-    def scout(self, grid: list, objects: list = None) -> None:
+    def scout(self, grid: list, objects: list = None, agents: list = None) -> None:
         """
         Estende BaseAgent.scout(): dopo aver aggiornato local_map e known_objects,
         individua le celle ENTRANCE (3) visibili e le aggiunge a self.warehouses.
         """
-        super().scout(grid, objects)
+        super().scout(grid, objects, agents)
 
         for (r, c), cell_val in self.local_map.items():
             if cell_val == ENTRANCE and (r, c) not in self._known_entrances:
@@ -46,6 +46,45 @@ class CollectorAgent(ScoutAgent):
     # ------------------------------------------------------------------
     # Navigation
     # ------------------------------------------------------------------
+    def _bfs_to_nearest_frontier(self) -> str | None:
+        """
+        BFS da self.position attraverso celle note e percorribili.
+        Restituisce la direzione del primo passo verso la cella di frontiera
+        più vicina (cella nota e percorribile che confina con almeno una cella
+        incognita nei limiti della mappa), oppure None se non raggiungibile.
+        """
+        if self.grid_size is None:
+            return None
+        rows, cols = self.grid_size
+
+        queue: deque = deque()
+        queue.append((self.position, None))   # (cella, prima_direzione_presa)
+        visited: set = {self.position}
+
+        while queue:
+            (r, c), first_dir = queue.popleft()
+
+            # Verifica se questa cella è una frontiera (non per la posizione iniziale)
+            if (r, c) != self.position:
+                for dr, dc in self.DIRECTIONS.values():
+                    nr, nc = r + dr, c + dc
+                    if (nr, nc) not in self.local_map and 0 <= nr < rows and 0 <= nc < cols:
+                        return first_dir  # trovata frontiera più vicina
+
+            # Espandi vicini attraverso celle note e percorribili
+            for direction, (dr, dc) in self.DIRECTIONS.items():
+                nr, nc = r + dr, c + dc
+                if (nr, nc) in visited:
+                    continue
+                cell_val = self.local_map.get((nr, nc))
+                if cell_val is None or cell_val == 1:
+                    continue  # muro o incognita: non si può transitare
+                visited.add((nr, nc))
+                step = first_dir if first_dir is not None else direction
+                queue.append(((nr, nc), step))
+
+        return None  # nessuna frontiera raggiungibile
+                
     def _bfs_to_position(self, goal: tuple) -> str | None:
         """
         BFS da self.position verso goal attraverso celle note e percorribili.
@@ -110,14 +149,14 @@ class CollectorAgent(ScoutAgent):
     # ------------------------------------------------------------------
     # Step
     # ------------------------------------------------------------------
-    def step(self, grid: list, objects: list = None) -> None:
+    def step(self, grid: list, objects: list = None, agents: list = None) -> None:
         """
         Un tick del collector:
         - EXPLORING: esplora le frontiere con BFS; se scopre un oggetto (e c'è
           almeno un warehouse noto) passa a TARGETING.
         - TARGETING: naviga verso l'oggetto bersaglio con BFS.
         """
-        self.scout(grid, objects)
+        self.scout(grid, objects, agents)
 
         if self.state == EXPLORING:
             if self.known_objects and self.warehouses and not self.carrying:
@@ -146,6 +185,7 @@ class CollectorAgent(ScoutAgent):
                     except ValueError:
                         pass
                 self.known_objects.discard(self.target)
+                self.collected_objects.add(self.target)
                 self.carrying = True
                 self.target = self._closest_warehouse_entrance()
                 self.state = DELIVERING

@@ -50,7 +50,7 @@ agents = scouts + collectors
 
 # Initial scout to populate local maps and known objects
 for agent in agents:
-    agent.scout(grid, objects)
+    agent.scout(grid, objects, agents)
 
 
 # ---- Pygame ----
@@ -73,10 +73,10 @@ while running and ticks < MAX_TICKS:
 
     # --- Simulation step ---
     for agent in scouts:
-        agent.step(grid, objects)
+        agent.step(grid, objects, agents)
         ticks += 1
     for agent in collectors:
-        agent.step(grid, objects)
+        agent.step(grid, objects, agents)
         ticks += 1
     communicate_all(agents)
 
