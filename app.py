@@ -5,9 +5,9 @@ from src.visualize_environment import visualize, CELL_SIZE, LEGEND_WIDTH
 from src.agents.scout_agent import ScoutAgent
 from src.agents.collector_agent import CollectorAgent
 from src.agents.base_agent import communicate_all
-
+    
 # ---- Configurazione ----
-LAYOUT = "B"          # "A", "B"
+LAYOUT = "A"          # "A", "B"
 VIS_RANGE   = 3
 COMM_RANGE  = 2
 INIT_BATTERY = 500
@@ -35,6 +35,7 @@ scouts = [
     )
     for i in range(NUM_SCOUTS)
 ]
+
 
 collectors = [
     CollectorAgent(
@@ -65,6 +66,7 @@ clock   = pygame.time.Clock()
 
 # --- Main loop ---
 running = True
+paused  = False
 ticks = 0
 steps = 0
 while running and ticks < MAX_TICKS and (objects or any(a.carrying for a in collectors)):
@@ -76,6 +78,15 @@ while running and ticks < MAX_TICKS and (objects or any(a.carrying for a in coll
                 running = False
             elif event.key == pygame.K_f:
                 FOG_OF_WAR = not FOG_OF_WAR
+            elif event.key == pygame.K_SPACE:
+                paused = not paused
+
+    if paused:
+        pygame.display.set_caption(f"M.A.R.O.N.N.E. - Layout {LAYOUT}  [PAUSA]")
+        clock.tick(SIM_SPEED)
+        continue
+    else:
+        pygame.display.set_caption(f"M.A.R.O.N.N.E. - Layout {LAYOUT}")
 
     # --- Simulation step ---
     for agent in scouts:
