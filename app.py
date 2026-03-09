@@ -15,6 +15,7 @@ NUM_SCOUTS  = 3
 NUM_COLLECTORS = 2
 SIM_SPEED   = 10      # ticks per second
 MAX_TICKS = 750
+FOG_OF_WAR  = True    # nebbia di guerra
 
 config_file = f"layouts\\{LAYOUT}.json"
 with open(config_file, "r") as f:
@@ -73,6 +74,8 @@ while running and ticks < MAX_TICKS and (objects or any(a.carrying for a in coll
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 running = False
+            elif event.key == pygame.K_f:
+                FOG_OF_WAR = not FOG_OF_WAR
 
     # --- Simulation step ---
     for agent in scouts:
@@ -86,7 +89,7 @@ while running and ticks < MAX_TICKS and (objects or any(a.carrying for a in coll
 
     # --- Visualization ---
     data["objects"] = list(objects)  # Objects is a dinamic set, update data for visualization
-    visualize(data, agents=agents, surface=screen)
+    visualize(data, agents=agents, surface=screen, fog_of_war=FOG_OF_WAR)
     pygame.display.flip()
     clock.tick(SIM_SPEED)
 

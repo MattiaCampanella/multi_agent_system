@@ -23,6 +23,7 @@ COLOR_MAP = {
 COLOR_OBJECT = (255, 165,   0)
 COLOR_GRID   = (200, 200, 200)
 COLOR_BG     = (240, 240, 240)
+COLOR_FOG    = ( 60,  60,  60)   # nebbia di guerra
 
 AGENT_COLOR_SCOUT     = ( 52, 152, 219)   # blu
 AGENT_COLOR_COLLECTOR = (231,  76,  60)   # rosso
@@ -36,13 +37,14 @@ LEGEND_ITEMS = [
     (COLOR_OBJECT,            "Object"),
     (AGENT_COLOR_SCOUT,       "Scout"),
     (AGENT_COLOR_COLLECTOR,   "Collector"),
+    (COLOR_FOG,               "Unknown"),
 ]
 
 LEGEND_WIDTH = 180
 CELL_SIZE    = 28
 
 
-def visualize(data: dict, agents: list = None, surface: pygame.Surface = None) -> pygame.Surface:
+def visualize(data: dict, agents: list = None, surface: pygame.Surface = None, fog_of_war: bool = False) -> pygame.Surface:
     """
     Disegna l'ambiente (e opzionalmente gli agenti) su una pygame.Surface.
     Se surface è None ne crea una nuova e la restituisce.
@@ -80,12 +82,28 @@ def visualize(data: dict, agents: list = None, surface: pygame.Surface = None) -
     font_agent  = pygame.font.SysFont("arial", CELL_SIZE - 10, bold=True)
     font_legend = pygame.font.SysFont("arial", 13)
 
+    # --- nebbia di guerra: celle esplorate e oggetti visibili ---
+    if fog_of_war and agents:
+        explored: set = set()
+        visible_objects: set = set()
+        for agent in agents:
+            explored.update(agent.local_map.keys())
+            visible_objects.update(agent.known_objects)
+    else:
+        explored = None          # None = tutto visibile
+        visible_objects = set(objects)
+
     # --- celle ---
     for r in range(n):
         for c in range(n):
+            rect = pygame.Rect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+            if explored is not None and (r, c) not in explored:
+                # Cella non ancora esplorata: nebbia
+                pygame.draw.rect(surface, COLOR_FOG, rect)
+                pygame.draw.rect(surface, COLOR_FOG, rect, 1)
+                continue
             val   = grid[r][c]
             color = COLOR_MAP.get(val, COLOR_MAP[EMPTY])
-            rect  = pygame.Rect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE)
             pygame.draw.rect(surface, color, rect)
             pygame.draw.rect(surface, COLOR_GRID, rect, 1)
 
@@ -94,8 +112,11 @@ def visualize(data: dict, agents: list = None, surface: pygame.Surface = None) -
                 surface.blit(txt, txt.get_rect(center=rect.center))
 
     # --- oggetti ---
-    for obj in objects:
+    for obj in (visible_objects if explored is not None else objects):
         obj_r, obj_c = obj
+        # Mostra l'oggetto solo se la cella è nota (potrebbe essere stato raccolto)
+        if obj not in objects:
+            continue
         cx = obj_c * CELL_SIZE + CELL_SIZE // 2
         cy = obj_r * CELL_SIZE + CELL_SIZE // 2
         pygame.draw.circle(surface, COLOR_OBJECT, (cx, cy), CELL_SIZE // 3)
