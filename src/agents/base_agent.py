@@ -141,7 +141,9 @@ class BaseAgent:
         other.local_map.update(merged_map)
         self.local_map.update(merged_map)
         # Unione bidirezionale degli oggetti noti
-        merged_objects = (self.known_objects | other.known_objects) - self.collected_objects - other.collected_objects
+        merged_collected = self.collected_objects | other.collected_objects
+        self.collected_objects.update(merged_collected)
+        merged_objects = (self.known_objects | other.known_objects) - self.collected_objects
         self.known_objects.clear() # ripulisce la lista
         self.known_objects.update(merged_objects) # aggiorna senza puntare allo stesso set
         other.known_objects.clear()

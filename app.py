@@ -5,14 +5,16 @@ from src.visualize_environment import visualize, CELL_SIZE, LEGEND_WIDTH
 from src.agents.scout_agent import ScoutAgent
 from src.agents.collector_agent import CollectorAgent
 from src.agents.base_agent import communicate_all
-    
+from src.agents.hybrid_agent import HybridAgent
+
 # ---- Configurazione ----
-LAYOUT = "A"          # "A", "B"
+LAYOUT = "B"          # "A", "B"
 VIS_RANGE   = 3
 COMM_RANGE  = 2
 INIT_BATTERY = 500
-NUM_SCOUTS  = 3
+NUM_SCOUTS  = 2
 NUM_COLLECTORS = 2
+NUM_HYBRIDS = 1
 SIM_SPEED   = 10      # ticks per second
 MAX_TICKS = 750
 FOG_OF_WAR  = True    # nebbia di guerra
@@ -47,7 +49,17 @@ collectors = [
     for i in range(NUM_COLLECTORS)
 ]
 
-agents = scouts + collectors
+hybrids = [
+    HybridAgent(
+        id=NUM_SCOUTS + NUM_COLLECTORS + i,
+        vis_range=VIS_RANGE,
+        comm_range=COMM_RANGE,
+        init_battery=INIT_BATTERY,
+    )
+    for i in range(NUM_HYBRIDS)
+]
+
+agents = scouts + collectors + hybrids
 
 
 initial_object_count = len(objects)
@@ -88,11 +100,7 @@ while running and ticks < MAX_TICKS and (objects or any(a.carrying for a in coll
         pygame.display.set_caption(f"M.A.R.O.N.N.E. - Layout {LAYOUT}")
 
     # --- Simulation step ---
-    for agent in scouts:
-        agent.step(grid, objects, agents, current_tick=ticks)
-        for i in range(len(agents)):
-            agent.communicate(agents[i])
-    for agent in collectors:
+    for agent in agents:
         agent.step(grid, objects, agents, current_tick=ticks)
         for i in range(len(agents)):
             agent.communicate(agents[i])

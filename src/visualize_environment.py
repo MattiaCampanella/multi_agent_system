@@ -3,8 +3,9 @@ Visualizza un ambiente usando pygame.
 """
 
 import pygame
-from src.agents.collector_agent import CollectorAgent as _CollectorAgent
-
+from src.agents.scout_agent import ScoutAgent
+from src.agents.collector_agent import CollectorAgent
+from src.agents.hybrid_agent import HybridAgent
 # Costanti cella
 EMPTY = 0
 WALL = 1
@@ -27,6 +28,7 @@ COLOR_FOG    = ( 60,  60,  60)   # nebbia di guerra
 
 AGENT_COLOR_SCOUT     = ( 52, 152, 219)   # blu
 AGENT_COLOR_COLLECTOR = (231,  76,  60)   # rosso
+AGENT_COLOR_HYBRID    = (155,  89, 182)   # viola
 
 LEGEND_ITEMS = [
     (COLOR_MAP[WALL],      "Wall"),
@@ -37,6 +39,7 @@ LEGEND_ITEMS = [
     (COLOR_OBJECT,            "Object"),
     (AGENT_COLOR_SCOUT,       "Scout"),
     (AGENT_COLOR_COLLECTOR,   "Collector"),
+    (AGENT_COLOR_HYBRID,      "Hybrid"),
     (COLOR_FOG,               "Unknown"),
 ]
 
@@ -124,7 +127,12 @@ def visualize(data: dict, agents: list = None, surface: pygame.Surface = None, f
     # --- agenti ---
     for agent in (agents or []):
         ar, ac = agent.position
-        color  = AGENT_COLOR_COLLECTOR if isinstance(agent, _CollectorAgent) else AGENT_COLOR_SCOUT
+        if isinstance(agent, HybridAgent):
+            color = AGENT_COLOR_HYBRID
+        elif isinstance(agent, ScoutAgent):
+            color = AGENT_COLOR_SCOUT
+        else:
+            color = AGENT_COLOR_COLLECTOR
         cx = ac * CELL_SIZE + CELL_SIZE // 2
         cy = ar * CELL_SIZE + CELL_SIZE // 2
         pygame.draw.circle(surface, color, (cx, cy), CELL_SIZE // 2 - 2)
