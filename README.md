@@ -129,7 +129,6 @@ At the end of the simulation a summary is printed to the console:
 ```
 ========= SIMULATION SUMMARY =========
 ticks:                  700/750
-Steps per agent:        140/150 
 Objects delivered:       10 / 10
 Avg. energy consumed:  312.4 / 500
 ```

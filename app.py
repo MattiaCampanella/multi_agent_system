@@ -68,7 +68,6 @@ clock   = pygame.time.Clock()
 running = True
 paused  = False
 ticks = 0
-steps = 0
 while running and ticks < MAX_TICKS and (objects or any(a.carrying for a in collectors)):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -91,12 +90,13 @@ while running and ticks < MAX_TICKS and (objects or any(a.carrying for a in coll
     # --- Simulation step ---
     for agent in scouts:
         agent.step(grid, objects, agents, current_tick=ticks)
-        ticks += 1
+        for i in range(len(agents)):
+            agent.communicate(agents[i])
     for agent in collectors:
         agent.step(grid, objects, agents, current_tick=ticks)
-        ticks += 1
-    communicate_all(agents)
-    steps += 1
+        for i in range(len(agents)):
+            agent.communicate(agents[i])
+    ticks += 1
 
     # --- Visualization ---
     data["objects"] = list(objects)  # Objects is a dinamic set, update data for visualization
@@ -115,7 +115,6 @@ avg_energy_consumed = sum(INIT_BATTERY - a.battery for a in agents) / len(agents
 
 print("\n========= SIMULATION SUMMARY =========")
 print(f"Ticks:                   {ticks} / {MAX_TICKS}")
-print(f"Steps per agent:         {steps} / {MAX_TICKS // len(agents)}")
 print(f"Objects delivered:        {total_delivered} / {initial_object_count}")
 print(f"Avg. energy consumed:   {avg_energy_consumed:.1f} / {INIT_BATTERY}")
 print("======================================")
