@@ -9,15 +9,15 @@ from src.agents.base_agent import communicate_all
 from src.agents.hybrid_agent import HybridAgent
 
 # ---- Configurazione ----
-CONFIGURATION = "3 Scouts"
+CONFIGURATION = "5 hybrids MAP"
 LAYOUT = "B"          # "A", "B"
-MAP=False
+MAP=True
 VIS_RANGE   = 3
 COMM_RANGE  = 2
 INIT_BATTERY = 500
-NUM_SCOUTS  = 3
-NUM_COLLECTORS = 2
-NUM_HYBRIDS = 0
+NUM_SCOUTS  = 0
+NUM_COLLECTORS = 0
+NUM_HYBRIDS = 5
 SIM_SPEED   = 10      # ticks per second
 MAX_TICKS = 750
 FOG_OF_WAR  = True    # nebbia di guerra

@@ -4,6 +4,8 @@ import glob
 import matplotlib.pyplot as plt
 import numpy as np
 
+from app import LAYOUT
+
 RESULTS_DIR = "results"
 
 
@@ -59,7 +61,7 @@ def plot_all(metrics: list[dict]):
     ax2.axhline(init_battery, color="gray", linestyle="--", alpha=0.4, linewidth=1, label="Max battery")
 
     plt.tight_layout()
-    out_path = os.path.join(RESULTS_DIR, "comparison.png")
+    out_path = os.path.join(RESULTS_DIR, f"comparison {LAYOUT}.png")
     plt.savefig(out_path, dpi=150)
     print(f"Grafico salvato in '{out_path}'")
     plt.show()

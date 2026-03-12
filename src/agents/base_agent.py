@@ -143,6 +143,7 @@ class BaseAgent:
         # Unione bidirezionale degli oggetti noti
         merged_collected = self.collected_objects | other.collected_objects
         self.collected_objects.update(merged_collected)
+        other.collected_objects.update(merged_collected)
         merged_objects = (self.known_objects | other.known_objects) - self.collected_objects
         self.known_objects.clear() # ripulisce la lista
         self.known_objects.update(merged_objects) # aggiorna senza puntare allo stesso set
