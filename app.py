@@ -9,15 +9,15 @@ from src.agents.base_agent import communicate_all
 from src.agents.hybrid_agent import HybridAgent
 
 # ---- Configurazione ----
-CONFIGURATION = "5 hybrids MAP"
-LAYOUT = "B"          # "A", "B"
-MAP=True
+CONFIGURATION = "1 Hybrid"
+LAYOUT = "A"          # "A", "B"
+MAP= False
 VIS_RANGE   = 3
 COMM_RANGE  = 2
 INIT_BATTERY = 500
-NUM_SCOUTS  = 0
-NUM_COLLECTORS = 0
-NUM_HYBRIDS = 5
+NUM_SCOUTS  = 2
+NUM_COLLECTORS = 2
+NUM_HYBRIDS = 1
 SIM_SPEED   = 10      # ticks per second
 MAX_TICKS = 750
 FOG_OF_WAR  = True    # nebbia di guerra
@@ -109,7 +109,7 @@ step_avg_battery_used = []  # avg battery consumed across all agents at each tic
 running = True
 paused  = False
 ticks = 0
-while running and ticks < MAX_TICKS and (objects or any(a.carrying for a in collectors)):
+while running and ticks < MAX_TICKS and (objects or any(a.carrying for a in (collectors + hybrids))):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -151,7 +151,7 @@ pygame.quit()
 
 # --- Save per-step metrics ---
 metrics = {
-    "configuration": CONFIGURATION,
+    "configuration": CONFIGURATION + ("MAP" if MAP else ""),
     "layout": LAYOUT,
     "max_ticks": MAX_TICKS,
     "ticks_run": ticks,
@@ -160,15 +160,16 @@ metrics = {
     "step_avg_battery_used": step_avg_battery_used,
 }
 os.makedirs("results", exist_ok=True)
-metrics_file = f"results\\metrics_{CONFIGURATION}-{LAYOUT}.json"
+metrics_file = f"results\\metrics_{CONFIGURATION}" + (" MAP" if MAP else "") + f"-{LAYOUT}.json"
 with open(metrics_file, "w") as f:
     json.dump(metrics, f, indent=2)
 print(f"\nMetrics saved to '{metrics_file}'")
 
 # --- Summary ---
-total_delivered = sum(
-    len(a.collected_objects) - (1 if a.carrying else 0)
-    for a in collectors
+# Gli oggetti vengono rimossi dalla lista globale al momento del pickup:
+# (initial - rimasti) = raccolti; sottraendo chi sta ancora trasportando si ottengono i consegnati.
+total_delivered = (initial_object_count - len(objects)) - sum(
+    1 for a in agents if getattr(a, "carrying", False)
 )
 avg_energy_consumed = sum(INIT_BATTERY - a.battery for a in agents) / len(agents)
 

@@ -107,9 +107,15 @@ class CollectorAgent(BaseAgent):
                 nr, nc = r + dr, c + dc
                 if (nr, nc) in visited:
                     continue
+                # Coerente con move(): blocca solo muri noti (1),
+                # le celle sconosciute (None) sono trattate come percorribili.
                 cell_val = self.local_map.get((nr, nc))
-                if cell_val is None or cell_val == 1:
+                if cell_val == 1:
                     continue
+                if self.grid_size is not None:
+                    rows, cols = self.grid_size
+                    if not (0 <= nr < rows and 0 <= nc < cols):
+                        continue
                 visited.add((nr, nc))
                 step = first_dir if first_dir is not None else direction
                 queue.append(((nr, nc), step))
@@ -221,4 +227,6 @@ class CollectorAgent(BaseAgent):
             if direction is not None:
                 self.move(direction)
 
+        if self.id == 4:
+            print(f"Collector {self.id} - State: {self.state}, Target: {self.target}, Carrying: {self.carrying}")
 
