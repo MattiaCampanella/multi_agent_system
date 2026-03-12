@@ -19,9 +19,6 @@ class HybridAgent(CollectorAgent):
     #------------------------------------------------------------------
     # Navigation (override)
     #------------------------------------------------------------------
-    # ------------------------------------------------------------------
-    # Exploration
-    # ------------------------------------------------------------------
     def _bfs_to_nearest_frontier(self) -> str | None:
         """
         BFS da self.position attraverso celle note e percorribili.
