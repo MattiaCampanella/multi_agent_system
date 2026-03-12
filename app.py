@@ -1,6 +1,7 @@
 import json
 import sys
 import pygame
+import os
 from src.visualize_environment import visualize, CELL_SIZE, LEGEND_WIDTH
 from src.agents.scout_agent import ScoutAgent
 from src.agents.collector_agent import CollectorAgent
@@ -8,6 +9,7 @@ from src.agents.base_agent import communicate_all
 from src.agents.hybrid_agent import HybridAgent
 
 # ---- Configurazione ----
+CONFIGURATION = "2 S + 2 C + 1 H"
 LAYOUT = "B"          # "A", "B"
 VIS_RANGE   = 3
 COMM_RANGE  = 2
@@ -76,6 +78,10 @@ screen  = pygame.display.set_mode((grid_px + LEGEND_WIDTH, grid_px))
 pygame.display.set_caption(f"M.A.R.O.N.N.E. - Layout {LAYOUT}")
 clock   = pygame.time.Clock()
 
+# --- Per-step metrics ---
+step_objects_found   = []   # cumulative objects picked up at each tick
+step_avg_battery_used = []  # avg battery consumed across all agents at each tick
+
 # --- Main loop ---
 running = True
 paused  = False
@@ -106,6 +112,12 @@ while running and ticks < MAX_TICKS and (objects or any(a.carrying for a in coll
             agent.communicate(agents[i])
     ticks += 1
 
+    # --- Record metrics ---
+    step_objects_found.append(initial_object_count - len(objects))
+    step_avg_battery_used.append(
+        sum(INIT_BATTERY - a.battery for a in agents) / len(agents)
+    )
+
     # --- Visualization ---
     data["objects"] = list(objects)  # Objects is a dinamic set, update data for visualization
     visualize(data, agents=agents, surface=screen, fog_of_war=FOG_OF_WAR)
@@ -113,6 +125,22 @@ while running and ticks < MAX_TICKS and (objects or any(a.carrying for a in coll
     clock.tick(SIM_SPEED)
 
 pygame.quit()
+
+# --- Save per-step metrics ---
+metrics = {
+    "configuration": CONFIGURATION,
+    "layout": LAYOUT,
+    "max_ticks": MAX_TICKS,
+    "ticks_run": ticks,
+    "initial_objects": initial_object_count,
+    "step_objects_found": step_objects_found,
+    "step_avg_battery_used": step_avg_battery_used,
+}
+os.makedirs("results", exist_ok=True)
+metrics_file = f"results\\metrics_{CONFIGURATION}-{LAYOUT}.json"
+with open(metrics_file, "w") as f:
+    json.dump(metrics, f, indent=2)
+print(f"\nMetrics saved to '{metrics_file}'")
 
 # --- Summary ---
 total_delivered = sum(
