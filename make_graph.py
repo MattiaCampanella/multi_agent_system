@@ -53,6 +53,8 @@ def plot_all(metrics: list[dict]):
     ax2.set_ylim(bottom=0)
     ax2.grid(True, alpha=0.3)
     ax2.legend(fontsize=9, loc="upper left")
+    max_tick = max(m["ticks_run"] for m in metrics)
+    ax2.set_xticks(range(0, max_tick + 1, 10))
     init_battery = metrics[0].get("max_battery", 500)
     ax2.axhline(init_battery, color="gray", linestyle="--", alpha=0.4, linewidth=1, label="Max battery")
 

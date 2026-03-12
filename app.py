@@ -9,14 +9,15 @@ from src.agents.base_agent import communicate_all
 from src.agents.hybrid_agent import HybridAgent
 
 # ---- Configurazione ----
-CONFIGURATION = "2 S + 2 C + 1 H"
+CONFIGURATION = "3 Scouts"
 LAYOUT = "B"          # "A", "B"
+MAP=False
 VIS_RANGE   = 3
 COMM_RANGE  = 2
 INIT_BATTERY = 500
-NUM_SCOUTS  = 2
+NUM_SCOUTS  = 3
 NUM_COLLECTORS = 2
-NUM_HYBRIDS = 1
+NUM_HYBRIDS = 0
 SIM_SPEED   = 10      # ticks per second
 MAX_TICKS = 750
 FOG_OF_WAR  = True    # nebbia di guerra
@@ -67,6 +68,28 @@ agents = scouts + collectors + hybrids
 initial_object_count = len(objects)
 
 # Initial scout to populate local maps and known objects
+rows = len(grid)
+cols = len(grid[0]) if rows else 0
+
+if MAP:
+    # Agenti conoscono la struttura della mappa (muri, magazzini, ingressi, uscite)
+    # ma NON le celle vuote (0) e NON gli oggetti
+    for agent in agents:
+        agent.grid_size = (rows, cols)
+        for r in range(rows):
+            for c in range(cols):
+                if grid[r][c] != 0:
+                    agent.local_map[(r, c)] = grid[r][c]
+        # Collector e Hybrid registrano subito ingressi e uscite
+        if hasattr(agent, 'warehouses'):
+            for (r, c), cell_val in agent.local_map.items():
+                if cell_val == 3 and (r, c) not in agent._known_entrances:
+                    agent._known_entrances.add((r, c))
+                    agent.warehouses.append({"entrance": (r, c)})
+                elif cell_val == 4:
+                    agent.known_exits.add((r, c))
+
+# Prima osservazione per registrare oggetti e agenti vicini
 for agent in agents:
     agent.scout(grid, objects, agents)
 
