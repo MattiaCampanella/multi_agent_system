@@ -160,18 +160,9 @@ source .venv/bin/activate     # macOS / Linux
 
 # Install all dependencies (simulation + graph)
 pip install -r requirements.txt
-
-# --- OR ---
-
-# Install only graph dependencies (if you only want to run make_graph.py,
-# e.g. on a machine without a display or where pygame is not needed)
-pip install -r graph_requirements.txt
 ```
 
 > **`requirements.txt`** includes `pygame`, `numpy`, and `matplotlib` — everything needed to run both the simulation and the graph tool.
->
-> **`graph_requirements.txt`** includes only `matplotlib` and `numpy` — sufficient for `make_graph.py` alone, without installing pygame.
-
 ---
 
 ## Usage
