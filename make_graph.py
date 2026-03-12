@@ -4,8 +4,6 @@ import glob
 import matplotlib.pyplot as plt
 import numpy as np
 
-from app import LAYOUT
-
 RESULTS_DIR = "results"
 
 
@@ -26,7 +24,7 @@ def plot_all(metrics: list[dict]):
         return
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
-    fig.suptitle("M.A.R.O.N.N.E. — Simulation Metrics", fontsize=14, fontweight="bold")
+    fig.suptitle("Simulation Metrics", fontsize=14, fontweight="bold")
 
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
@@ -61,7 +59,7 @@ def plot_all(metrics: list[dict]):
     ax2.axhline(init_battery, color="gray", linestyle="--", alpha=0.4, linewidth=1, label="Max battery")
 
     plt.tight_layout()
-    out_path = os.path.join(RESULTS_DIR, f"comparison {LAYOUT}.png")
+    out_path = os.path.join(RESULTS_DIR, f"comparison.png")
     plt.savefig(out_path, dpi=150)
     print(f"Grafico salvato in '{out_path}'")
     plt.show()
