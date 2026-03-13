@@ -1,8 +1,6 @@
 import json
 import sys
-import pygame
 import os
-from src.visualize_environment import visualize, CELL_SIZE, LEGEND_WIDTH
 from src.agents.scout_agent import ScoutAgent
 from src.agents.collector_agent import CollectorAgent
 from src.agents.base_agent import communicate_all
@@ -18,11 +16,22 @@ INIT_BATTERY = 500
 NUM_SCOUTS  = 2
 NUM_COLLECTORS = 2
 NUM_HYBRIDS = 1
-SIM_SPEED   = 10      # ticks per second
+SIM_SPEED   = 10      # ticks per second (local only)
 MAX_TICKS = 750
-FOG_OF_WAR  = True    # nebbia di guerra
+FOG_OF_WAR  = True    # nebbia di guerra (local only)
 
-config_file = f"layouts\\{LAYOUT}.json"
+# ---- Session Target ----
+# "local"      — interactive pygame window with real-time visualisation and
+#                keyboard controls (ESC / SPACE / F).  Requires a display.
+# "background" — headless execution: no window is opened; the simulation runs
+#                at full speed and saves metrics to results/.  Ideal for batch
+#                runs or automated testing on machines without a display.
+# "cloud"      — same as "background" but prints a brief per-tick progress
+#                line to stdout, making it easier to monitor long runs in
+#                streaming cloud logs (e.g. GitHub Actions, CI pipelines).
+SESSION_TARGET = "local"   # "local" | "background" | "cloud"
+
+config_file = os.path.join("layouts", f"{LAYOUT}.json")
 with open(config_file, "r") as f:
     data = json.load(f)
 
@@ -94,60 +103,91 @@ for agent in agents:
     agent.scout(grid, objects, agents)
 
 
-# ---- Pygame ----
-pygame.init()
-grid_px = n * CELL_SIZE
-screen  = pygame.display.set_mode((grid_px + LEGEND_WIDTH, grid_px))
-pygame.display.set_caption(f"M.A.R.O.N.N.E. - Layout {LAYOUT}")
-clock   = pygame.time.Clock()
-
 # --- Per-step metrics ---
 step_objects_found   = []   # cumulative objects picked up at each tick
 step_avg_battery_used = []  # avg battery consumed across all agents at each tick
 
-# --- Main loop ---
-running = True
-paused  = False
-ticks = 0
-while running and ticks < MAX_TICKS and (objects or any(a.carrying for a in (collectors + hybrids))):
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
+# ============================================================
+# LOCAL session target — interactive pygame window
+# ============================================================
+if SESSION_TARGET == "local":
+    import pygame
+    from src.visualize_environment import visualize, CELL_SIZE, LEGEND_WIDTH
+
+    pygame.init()
+    grid_px = n * CELL_SIZE
+    screen  = pygame.display.set_mode((grid_px + LEGEND_WIDTH, grid_px))
+    pygame.display.set_caption(f"M.A.R.O.N.N.E. - Layout {LAYOUT}")
+    clock   = pygame.time.Clock()
+
+    running = True
+    paused  = False
+    ticks = 0
+    while running and ticks < MAX_TICKS and (objects or any(a.carrying for a in (collectors + hybrids))):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
                 running = False
-            elif event.key == pygame.K_f:
-                FOG_OF_WAR = not FOG_OF_WAR
-            elif event.key == pygame.K_SPACE:
-                paused = not paused
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+                elif event.key == pygame.K_f:
+                    FOG_OF_WAR = not FOG_OF_WAR
+                elif event.key == pygame.K_SPACE:
+                    paused = not paused
 
-    if paused:
-        pygame.display.set_caption(f"M.A.R.O.N.N.E. - Layout {LAYOUT}  [PAUSA]")
+        if paused:
+            pygame.display.set_caption(f"M.A.R.O.N.N.E. - Layout {LAYOUT}  [PAUSA]")
+            clock.tick(SIM_SPEED)
+            continue
+        else:
+            pygame.display.set_caption(f"M.A.R.O.N.N.E. - Layout {LAYOUT}")
+
+        # --- Simulation step ---
+        for agent in agents:
+            agent.step(grid, objects, agents, current_tick=ticks)
+            for i in range(len(agents)):
+                agent.communicate(agents[i])
+        ticks += 1
+
+        # --- Record metrics ---
+        step_objects_found.append(initial_object_count - len(objects))
+        step_avg_battery_used.append(
+            sum(INIT_BATTERY - a.battery for a in agents) / len(agents)
+        )
+
+        # --- Visualization ---
+        data["objects"] = list(objects)  # Objects is a dynamic set, update data for visualization
+        visualize(data, agents=agents, surface=screen, fog_of_war=FOG_OF_WAR)
+        pygame.display.flip()
         clock.tick(SIM_SPEED)
-        continue
-    else:
-        pygame.display.set_caption(f"M.A.R.O.N.N.E. - Layout {LAYOUT}")
 
-    # --- Simulation step ---
-    for agent in agents:
-        agent.step(grid, objects, agents, current_tick=ticks)
-        for i in range(len(agents)):
-            agent.communicate(agents[i])
-    ticks += 1
+    pygame.quit()
 
-    # --- Record metrics ---
-    step_objects_found.append(initial_object_count - len(objects))
-    step_avg_battery_used.append(
-        sum(INIT_BATTERY - a.battery for a in agents) / len(agents)
-    )
+# ============================================================
+# BACKGROUND / CLOUD session targets — headless execution
+# ============================================================
+else:
+    ticks = 0
+    while ticks < MAX_TICKS and (objects or any(a.carrying for a in (collectors + hybrids))):
+        # --- Simulation step ---
+        for agent in agents:
+            agent.step(grid, objects, agents, current_tick=ticks)
+            for i in range(len(agents)):
+                agent.communicate(agents[i])
+        ticks += 1
 
-    # --- Visualization ---
-    data["objects"] = list(objects)  # Objects is a dinamic set, update data for visualization
-    visualize(data, agents=agents, surface=screen, fog_of_war=FOG_OF_WAR)
-    pygame.display.flip()
-    clock.tick(SIM_SPEED)
+        # --- Record metrics ---
+        step_objects_found.append(initial_object_count - len(objects))
+        step_avg_battery_used.append(
+            sum(INIT_BATTERY - a.battery for a in agents) / len(agents)
+        )
 
-pygame.quit()
+        # cloud: emit a brief progress line every 50 ticks so streaming logs
+        # show liveness without flooding the output.
+        if SESSION_TARGET == "cloud" and ticks % 50 == 0:
+            collected = initial_object_count - len(objects)
+            print(f"[tick {ticks:4d}] objects collected: {collected}/{initial_object_count}", flush=True)
+
 
 # --- Save per-step metrics ---
 metrics = {
@@ -160,7 +200,7 @@ metrics = {
     "step_avg_battery_used": step_avg_battery_used,
 }
 os.makedirs("results", exist_ok=True)
-metrics_file = f"results\\metrics_{CONFIGURATION}" + (" MAP" if MAP else "") + f"-{LAYOUT}.json"
+metrics_file = os.path.join("results", f"metrics_{CONFIGURATION}" + (" MAP" if MAP else "") + f"-{LAYOUT}.json")
 with open(metrics_file, "w") as f:
     json.dump(metrics, f, indent=2)
 print(f"\nMetrics saved to '{metrics_file}'")

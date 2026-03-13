@@ -95,9 +95,37 @@ All parameters are set at the top of `app.py`:
 | `NUM_SCOUTS` | `2` | Number of scout agents |
 | `NUM_COLLECTORS` | `2` | Number of collector agents |
 | `NUM_HYBRIDS` | `1` | Number of hybrid agents |
-| `SIM_SPEED` | `10` | Simulation speed (ticks per second) |
+| `SIM_SPEED` | `10` | Simulation speed (ticks per second, `local` only) |
 | `MAX_TICKS` | `750` | Maximum ticks before the simulation stops |
-| `FOG_OF_WAR` | `True` | Whether agents only see their explored area (toggle with **F**) |
+| `FOG_OF_WAR` | `True` | Whether agents only see their explored area (toggle with **F**, `local` only) |
+| `SESSION_TARGET` | `"local"` | Execution mode — see [Session Targets](#session-targets) |
+
+---
+
+## Session Targets
+
+`SESSION_TARGET` controls how the simulation is executed.  All three modes
+run the **same agent logic** (Scout, Collector, Hybrid) and save identical
+metrics JSON files to `results/`.
+
+| Value | Requires display? | Description |
+|---|---|---|
+| `"local"` | **Yes** | Opens a pygame window with real-time visualisation.  Keyboard shortcuts (ESC / SPACE / F) are active.  Useful for interactive exploration and debugging. |
+| `"background"` | No | Headless execution — no window is opened.  The simulation runs at full CPU speed and exits silently after saving metrics.  Ideal for automated batch runs, CI pipelines, or any machine without a display. |
+| `"cloud"` | No | Same headless execution as `"background"`, but prints a brief progress line to stdout every 50 ticks so that streaming logs (e.g. GitHub Actions, cloud run logs) stay alive and show liveness. |
+
+### Choosing a session target
+
+```python
+# app.py — top of the file
+SESSION_TARGET = "local"       # interactive window
+# SESSION_TARGET = "background"  # headless, silent
+# SESSION_TARGET = "cloud"       # headless, with progress output
+```
+
+> **Note** — `SIM_SPEED` and `FOG_OF_WAR` are only meaningful in `"local"`
+> mode.  In `"background"` and `"cloud"` mode the simulation runs as fast as
+> possible and there is no visual layer to render fog of war.
 
 ---
 
@@ -171,13 +199,24 @@ pip install -r requirements.txt
 python app.py
 ```
 
+### Local mode (default)
+
 | Key | Action |
 |---|---|
 | **ESC** | Stop the simulation |
 | **SPACE** | Pause / resume |
 | **F** | Toggle fog of war |
 
-At the end of the simulation a summary is printed to the console:
+### Background / Cloud mode
+
+Set `SESSION_TARGET = "background"` or `SESSION_TARGET = "cloud"` at the top of `app.py`.
+No pygame window is opened; the simulation runs at full speed.
+
+```bash
+python app.py        # SESSION_TARGET = "background" or "cloud" set in app.py
+```
+
+At the end of every run (all modes) a summary is printed to the console:
 
 ```
 ========= SIMULATION SUMMARY =========
