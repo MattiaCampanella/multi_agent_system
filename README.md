@@ -191,6 +191,39 @@ Metrics saved to 'results/metrics_2 S + 2 C + 1 H-B.json'
 
 ---
 
+## GitHub Copilot Session Targets
+
+GitHub Copilot coding agents can run in three different **session targets**: **local**, **cloud**, and **background**. Here is a summary of what changes between them and how the **ask** and **agent** interaction modes relate to each.
+
+### Session Targets
+
+| Target | Where it runs | When to use |
+|---|---|---|
+| **Local** | On your own machine, inside your IDE (e.g. VS Code) | Best when the task requires direct access to local files, private networks, or environment-specific tooling. Requires your machine to be on and the IDE to be open. |
+| **Cloud** | On GitHub-hosted infrastructure (e.g. a Codespace or an ephemeral runner) | Best for tasks that must run in a clean, reproducible environment or when your local machine is unavailable. The agent has access to the repository but not to local-only resources. |
+| **Background** | Asynchronously on GitHub's servers | Best for long-running or non-interactive tasks. You submit the task, carry on with other work, and review the results when they are ready. No local IDE or open session is required. |
+
+### Key differences
+
+| Aspect | Local | Cloud | Background |
+|---|---|---|---|
+| Compute | Your machine | GitHub-hosted | GitHub-hosted (async) |
+| Requires IDE open | Yes | No | No |
+| Access to local files/tools | Yes | No | No |
+| Suitable for long tasks | Limited | Yes | Best fit |
+| Immediate feedback | Yes | Yes | No — results reviewed later |
+
+### Ask and Agent modes
+
+Both **ask** mode and **agent** mode are available regardless of the session target you choose.
+
+- **Ask mode** — you ask Copilot a question or request an explanation and receive a direct answer. The session target determines only where that answer is generated, not whether the mode is available.
+- **Agent mode** — Copilot acts autonomously, using tools (file edits, terminal commands, web search, etc.) to complete a task end-to-end. This mode works with all three targets; the target simply controls the environment in which those tool calls are executed.
+
+In short: switching session target affects the **execution environment** (local machine vs. cloud vs. background job), not the **interaction model**. You can freely use ask or agent mode with any target.
+
+---
+
 ## Dependencies
 
 | Package | Used by | Version |
