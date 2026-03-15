@@ -212,3 +212,7 @@ visualization/*
 appunti_di_sviluppo.txt
 results
 results/*
+report/*
+!report/report.tex
+!report/report.pdf
+!report/img
