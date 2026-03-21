@@ -1,6 +1,5 @@
 
-# M.A.R.O.N.N.E.
-### Multi-Agent Recovery, Organization and Network Navigation Engine
+# Multi-Agent Recovery, Organization and Network Navigation Engine
 
 A multi-agent simulation built with Python and Pygame in which heterogeneous agents cooperate to explore a grid environment, collect scattered objects, and deliver them to warehouses.
 
