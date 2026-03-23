@@ -52,7 +52,7 @@ Un sistema multi-agente si distingue per l'assenza intrinseca di un controllore 
 L'architettura adottata in questo progetto impone inoltre agli agenti di comunicare fra di loro per aggiornare la loro conoscenza del mondo di gioco. 
 
 \section{Il Meccanismo della Comunicazione}
-La condivisione delle informazioni non è continua, ma dipendente dalla prossimità tra gli agenti. Viene definito un raggio di comunicazione (\texttt{COMM\_RANGE}): quando due agenti si trovano nelle rispettive aree di comunicazione — definite dalla distanza di Chebyshev (il massimo tra la differenza assoluta di righe e quella di colonne, equivalente al raggio di un quadrato attorno all'agente) — viene eseguita un'unione bidirezionale dei dati.
+La condivisione delle informazioni non è continua, ma dipendente dalla prossimità tra gli agenti. Viene definito un raggio di comunicazione (\texttt{COMM\_RANGE}): quando due agenti si trovano nelle rispettive aree di comunicazione, definite dalla distanza di Chebyshev (il massimo tra la differenza assoluta di righe e quella di colonne, equivalente al raggio di un quadrato attorno all'agente), viene eseguita un'unione bidirezionale dei dati.
 
 Durante la comunicazione, gli agenti fondono reciprocamente le seguenti informazioni:
 \begin{itemize}
@@ -70,7 +70,7 @@ La classe \texttt{BaseAgent} definisce le funzionalità comuni a tutti gli agent
 \section{ScoutAgent: Esplorazione Pura (Frontier-based Search)}
 Lo \texttt{ScoutAgent} eredita le capacità di base e si specializza nell'esplorazione della mappa. Opera secondo la strategia \textit{Frontier-based Search}, in cui l'agente si dirige sempre verso i bordi delle aree già esplorate per scoprire nuove celle:
 \begin{enumerate}
-    \item \textbf{Identificazione delle Frontiere:} Tramite una \textit{Breadth-First Search} (BFS) — algoritmo che visita le celle in ordine di distanza crescente, garantendo il percorso più breve in grafi non pesati — l'agente individua le celle percorribili note che confinano con almeno una cella ancora inesplorata (la ``frontiera'').
+    \item \textbf{Identificazione delle Frontiere:} Tramite una \textit{Breadth-First Search} (BFS), algoritmo che visita le celle in ordine di distanza crescente, garantendo il percorso più breve in grafi non pesati, l'agente individua le celle percorribili note che confinano con almeno una cella ancora inesplorata (la ``frontiera'').
     \item \textbf{Euristica di Dispersione:} Dirigersi sempre alla frontiera più vicina porterebbe più agenti nella stessa area. Per evitarlo, lo Scout calcola uno score per ogni frontiera con la formula: $\texttt{score} = d_{BFS} - d_{agenti}$, dove $d_{BFS}$ è la distanza BFS dalla posizione corrente alla frontiera e $d_{agenti}$ è la distanza di Manhattan minima tra la frontiera e qualunque altro agente noto. Una frontiera vicina ad altri agenti ottiene uno score alto e viene quindi evitata, favorendo una copertura distribuita della mappa.
 \end{enumerate}
 
@@ -78,7 +78,7 @@ Lo \texttt{ScoutAgent} eredita le capacità di base e si specializza nell'esplor
 Il processo decisionale del CollectorAgent è specializzato alla raccolta di oggetti. Il suo comportamento è definito da una \textit{Finite State Machine} (FSM): un modello in cui l'agente si trova sempre in uno stato preciso e transisce a un nuovo stato al verificarsi di condizioni specifiche. La FSM ha quattro stati:
 \begin{enumerate}
     \item \textbf{EXPLORING:} Si dirige verso la frontiera più vicina tramite BFS, senza l'euristica di dispersione degli Scout. Se individua (visivamente o via comunicazione) la posizione di un magazzino e di almeno un oggetto abbandonato, transisce allo stato \textit{TARGETING}.
-    \item \textbf{TARGETING:} Il collector smette di esplorare e si dirige verso l'oggetto più vicino tramite BFS. La distanza di Manhattan — somma delle differenze assolute di riga e colonna — viene usata per scegliere quale oggetto puntare tra quelli noti. Se durante il tragitto scopre che l'oggetto è già stato raccolto da un altro agente, ricalcola il target scegliendo quello successivo oppure tornando all'esplorazione.
+    \item \textbf{TARGETING:} Il collector smette di esplorare e si dirige verso l'oggetto più vicino tramite BFS. La distanza di Manhattan, somma delle differenze assolute di riga e colonna, viene usata per scegliere quale oggetto puntare tra quelli noti. Se durante il tragitto scopre che l'oggetto è già stato raccolto da un altro agente, ricalcola il target scegliendo quello successivo oppure tornando all'esplorazione.
     \item \textbf{DELIVERING:} Quando l'agente raggiunge la posizione dell'oggetto, lo raccoglie e si dirige verso la cella di ingresso (\texttt{ENTRANCE}) del magazzino più vicino.
     \item \textbf{EXITING:} Dopo aver consegnato l'oggetto, l'agente si sposta verso la cella di uscita (\texttt{EXIT}) del magazzino per liberare l'ingresso e non bloccare altri agenti in arrivo. Raggiunta l'uscita, decide se tornare a \textit{EXPLORING} oppure a \textit{TARGETING} se esistono ancora oggetti noti da raccogliere.
 \end{enumerate}
