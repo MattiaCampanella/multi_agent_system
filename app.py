@@ -98,7 +98,7 @@ for agent in agents:
 pygame.init()
 grid_px = n * CELL_SIZE
 screen  = pygame.display.set_mode((grid_px + LEGEND_WIDTH, grid_px))
-pygame.display.set_caption(f"M.A.R.O.N.N.E. - Layout {LAYOUT}")
+pygame.display.set_caption(f"Simulazione - Layout {LAYOUT}")
 clock   = pygame.time.Clock()
 
 # --- Per-step metrics ---
