@@ -59,6 +59,7 @@ Durante la comunicazione, gli agenti fondono reciprocamente le seguenti informaz
     \item \textbf{Topologia della Mappa:} La percorribilità e conformazione delle celle scoperte.
     \item \textbf{Risorse Individuate:} Le coordinate di oggetti o dei magazzini scoperti lungo l'esplorazione.
     \item \textbf{Status degli Oggetti:} Gli oggetti già raccolti vengono rimossi dalla lista condivisa, in modo che nessun agente possa indirizzare un altro verso un oggetto già preso.
+    \item \textbf{Posizioni degli Agenti:} Ogni agente condivide la stima più recente della posizione osservata degli altri agenti, associata al tick di osservazione; in caso di conflitto tra informazioni, viene mantenuto il dato con timestamp più aggiornato.
 \end{itemize}
 
 \chapter{Euristiche e Processi Decisionali degli Agenti}
@@ -106,7 +107,7 @@ I due grafici mostrano rispettivamente il numero cumulativo di oggetti consegnat
     \label{fig:comparisonA}
 \end{figure}
 
-\section{Comportamento su Layout B (Geometria complessa)}
+\section{Comportamento su Layout B}
 
 Anche qui i due grafici mostrano oggetti consegnati e batteria consumata nel tempo. Il caso migliore è 5 Hybrid con mappa: completano la consegna di tutti gli oggetti intorno al tick 90, con un consumo di batteria contenuto. Il caso peggiore è invece 3 Scout e 2 Collector senza mappa: non riescono a consegnare tutti gli oggetti prima delle altre simulazioni nonostante inizino le consegne per primi, mentre il caso 5 Hybrid senza mappa ha il consumo di batteria medio maggiore. In questo layout il vantaggio della mappa è molto più marcato rispetto al Layout A: probabilmente la struttura labirintica rende la navigazione senza mappa particolarmente costosa. Inoltre è interessante notare come strategie che potrebbero sembrare più efficienti in teoria, non possono esserlo in tutti i contesti.
 
